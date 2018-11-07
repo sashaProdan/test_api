@@ -1,0 +1,4 @@
+2018-10-31 14:06:26.143 CDT [37368] FATAL:  database files are incompatible with server
+2018-10-31 14:06:26.143 CDT [37368] DETAIL:  The data directory was initialized by PostgreSQL version 9.5, which is not compatible with this version 10.5.
+2018-10-31 14:13:31.965 CDT [37442] FATAL:  database files are incompatible with server
+2018-10-31 14:13:31.965 CDT [37442] DETAIL:  The data directory was initialized by PostgreSQL version 9.5, which is not compatible with this version 10.5.
