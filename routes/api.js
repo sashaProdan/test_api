@@ -2,46 +2,29 @@ var express = require('express');
 var router = express.Router();
 var client = require('../connection');
 var inserts = require('../queries');
-
-// router.get('/events', function(req, res, next) {
-//   client.query('SELECT * FROM clicks', (err, res) => {
-//     console.log(err ? err.stack : res.rows[0]);
-//   });
-//   res.send([]);
-// });
+var amqp = require('amqplib');
 
 router.post('/events', (req, res) => {
-  const eventObject = JSON.parse(req.body);
-  const event = JSON.parse(req.body).event;
-  const values = Object.values(eventObject).slice(1);
-  let query;
+  const json = JSON.parse(req.body);
+  res.send('Success');
+  
+  json.events.forEach(event => {
+    const eventType = event['eType'];
+    event['metadata'] = json.metadata;
 
-  if (event === 'click') {
-    const query = {
-      text: inserts.click,
-      values,
-    }
+    amqp.connect('amqp://localhost').then(function(conn) {
+      return conn.createChannel().then(function(ch) {
+        var ex = 'events';
+        var ok = ch.assertExchange(ex, 'direct', {durable: false});
 
-    client.query(query, (err, res) => {
-      console.log(err ? err.stack : 'Success');
-    });
-    // console.log(`CLICK: ${query.values}`);
-    console.log(req.body);
-
-    res.send('Hello');
-  } else if (event === 'mousemove') {
-    query = {
-      text: inserts.mousemove,
-      values,
-    }
-
-    client.query(query, (err, res) => {
-      console.log(err ? err.stack : 'Success');
-    });
-    console.log(`MOUSEMOVE: ${query.values}`);
-    res.send('Hello');
-
-  }
+        return ok.then(function() {
+          ch.publish(ex, eventType, Buffer.from(JSON.stringify(event)));
+          console.log(" [x] Sent %s:'%s'", eventType, JSON.stringify(event));
+          return ch.close();
+        });
+      }).finally(() => conn.close());
+    }).catch(console.warn);
+  })
 })
 
 module.exports = router;
